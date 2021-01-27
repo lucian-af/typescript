@@ -42,7 +42,7 @@ System.register(["./view"], function (exports_1, context_1) {
         <tfoot>
         </tfoot>
 
-        </table>
+        </table>        
       `;
                 }
             };
