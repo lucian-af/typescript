@@ -1,24 +1,31 @@
 import { NegociacoesView, MensagemView } from "../views/index";
 import { Negociacoes, Negociacao } from "../models/index";
+import { delay, domInject, imprimir } from "../helpers/index";
+import { NegociacaoService } from "../services/index";
 
+let timer = 0;
 export class NegociacaoController {
+
+  @domInject("#data")
   private _inputData: JQuery;
+
+  @domInject("#quantidade")
   private _inputQuantidade: JQuery;
+
+  @domInject("#valor")
   private _inputValor: JQuery;
   private _negociacoes = new Negociacoes();
   private _negociacoesView = new NegociacoesView("#negociacoesView");
   private _mensagemView = new MensagemView("#mensagemView");
+  private _negociacaoService = new NegociacaoService();
 
   // Essse comentario não existe após o processo de compilação
   constructor() {
-    this._inputData = $("#data");
-    this._inputQuantidade = $("#quantidade");
-    this._inputValor = $("#valor");
     this._negociacoesView.atualizar(this._negociacoes);
   }
 
-  adicionar(event: Event): void {
-    event.preventDefault();
+  @delay()
+  adicionar(): void {
 
     let data = new Date(this._inputData.val().replace(/-/g, ","));
 
@@ -36,6 +43,8 @@ export class NegociacaoController {
     );
 
     this._negociacoes.adicionar(negociacao);
+
+    imprimir(negociacao, this._negociacoes);
     this._negociacoesView.atualizar(this._negociacoes);
     this._mensagemView.atualizar("Negociação adicionada com sucesso!");
   }
@@ -46,7 +55,31 @@ export class NegociacaoController {
       data.getDay() != eDiaDaSemana.Domingo
     );
   }
+
+  @delay(1000)
+  async importarDados() {
+
+    try {
+      const negociacoes = await this._negociacaoService.obterNegociacoes(
+        res => {
+          if (res.ok) return res;
+          throw new Error(res.statusText);
+        });
+
+      const negociacoesImportadas = this._negociacoes.paraArray();
+      negociacoes
+        .filter(negociacao => !negociacoesImportadas.some(importada => negociacao.ehIgual(importada)))
+        .forEach(negociacao => this._negociacoes.adicionar(negociacao));
+
+      this._negociacoesView.atualizar(this._negociacoes);
+      
+    } catch (err) {
+      this._mensagemView.atualizar(err.message);
+    }
+  }
 }
+
+
 
 enum eDiaDaSemana {
   Domingo,

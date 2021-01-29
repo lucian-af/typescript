@@ -1,7 +1,21 @@
-System.register(["../views/index", "../models/index"], function (exports_1, context_1) {
+System.register(["../views/index", "../models/index", "../helpers/index", "../services/index"], function (exports_1, context_1) {
     "use strict";
+    var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
     var __moduleName = context_1 && context_1.id;
-    var index_1, index_2, NegociacaoController, eDiaDaSemana;
+    var index_1, index_2, index_3, index_4, timer, NegociacaoController, eDiaDaSemana;
     return {
         setters: [
             function (index_1_1) {
@@ -9,21 +23,25 @@ System.register(["../views/index", "../models/index"], function (exports_1, cont
             },
             function (index_2_1) {
                 index_2 = index_2_1;
+            },
+            function (index_3_1) {
+                index_3 = index_3_1;
+            },
+            function (index_4_1) {
+                index_4 = index_4_1;
             }
         ],
         execute: function () {
+            timer = 0;
             NegociacaoController = class NegociacaoController {
                 constructor() {
                     this._negociacoes = new index_2.Negociacoes();
                     this._negociacoesView = new index_1.NegociacoesView("#negociacoesView");
                     this._mensagemView = new index_1.MensagemView("#mensagemView");
-                    this._inputData = $("#data");
-                    this._inputQuantidade = $("#quantidade");
-                    this._inputValor = $("#valor");
+                    this._negociacaoService = new index_4.NegociacaoService();
                     this._negociacoesView.atualizar(this._negociacoes);
                 }
-                adicionar(event) {
-                    event.preventDefault();
+                adicionar() {
                     let data = new Date(this._inputData.val().replace(/-/g, ","));
                     if (!this._ehDiaUtil(data)) {
                         this._mensagemView.atualizar("Somente negociações em dias úteis, por favor!");
@@ -31,6 +49,7 @@ System.register(["../views/index", "../models/index"], function (exports_1, cont
                     }
                     const negociacao = new index_2.Negociacao(data, parseInt(this._inputQuantidade.val()), parseFloat(this._inputValor.val()));
                     this._negociacoes.adicionar(negociacao);
+                    index_3.imprimir(negociacao, this._negociacoes);
                     this._negociacoesView.atualizar(this._negociacoes);
                     this._mensagemView.atualizar("Negociação adicionada com sucesso!");
                 }
@@ -38,7 +57,41 @@ System.register(["../views/index", "../models/index"], function (exports_1, cont
                     return (data.getDay() != eDiaDaSemana.Sabado &&
                         data.getDay() != eDiaDaSemana.Domingo);
                 }
+                importarDados() {
+                    return __awaiter(this, void 0, void 0, function* () {
+                        try {
+                            const negociacoes = yield this._negociacaoService.obterNegociacoes(res => {
+                                if (res.ok)
+                                    return res;
+                                throw new Error(res.statusText);
+                            });
+                            const negociacoesImportadas = this._negociacoes.paraArray();
+                            negociacoes
+                                .filter(negociacao => !negociacoesImportadas.some(importada => negociacao.ehIgual(importada)))
+                                .forEach(negociacao => this._negociacoes.adicionar(negociacao));
+                            this._negociacoesView.atualizar(this._negociacoes);
+                        }
+                        catch (err) {
+                            this._mensagemView.atualizar(err.message);
+                        }
+                    });
+                }
             };
+            __decorate([
+                index_3.domInject("#data")
+            ], NegociacaoController.prototype, "_inputData", void 0);
+            __decorate([
+                index_3.domInject("#quantidade")
+            ], NegociacaoController.prototype, "_inputQuantidade", void 0);
+            __decorate([
+                index_3.domInject("#valor")
+            ], NegociacaoController.prototype, "_inputValor", void 0);
+            __decorate([
+                index_3.delay()
+            ], NegociacaoController.prototype, "adicionar", null);
+            __decorate([
+                index_3.delay(1000)
+            ], NegociacaoController.prototype, "importarDados", null);
             exports_1("NegociacaoController", NegociacaoController);
             (function (eDiaDaSemana) {
                 eDiaDaSemana[eDiaDaSemana["Domingo"] = 0] = "Domingo";
